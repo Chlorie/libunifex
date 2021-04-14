@@ -170,6 +170,14 @@ struct async_scope {
     }
   }
 
+  template (typename Fun, typename Scheduler)
+    (requires callable<Fun> && scheduler<Scheduler>)
+  void spawn_with(Fun&& fun, Scheduler&& scheduler) {
+    spawn(
+      transform(schedule(), (Fun&&) fun),
+      (Scheduler&&) scheduler);
+  }
+
   [[nodiscard]] auto cleanup() noexcept {
     return sequence(
         transform(just(), [this]() noexcept {
