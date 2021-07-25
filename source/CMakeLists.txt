@@ -29,22 +29,22 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     PUBLIC
       pthread)
 
-if (NOT UNIFEX_NO_LIBURING)
+  if (NOT UNIFEX_NO_LIBURING)
 
-  target_sources(unifex
-    PRIVATE
-      linux/io_uring_context.cpp
-      linux/io_uring_syscall.cpp)
+    target_sources(unifex
+      PRIVATE
+        linux/io_uring_context.cpp
+        linux/io_uring_syscall.cpp)
 
-  target_include_directories(unifex
-    PUBLIC
-      ${UNIFEX_URING_INCLUDE_DIRS})
+    target_include_directories(unifex
+      PUBLIC
+        ${UNIFEX_URING_INCLUDE_DIRS})
 
-  target_link_libraries(unifex
-    PRIVATE
-      ${UNIFEX_URING_LIBRARY})
+    target_link_libraries(unifex
+      PRIVATE
+        ${UNIFEX_URING_LIBRARY})
 
-endif()
+  endif()
 
 endif()
 
@@ -61,16 +61,42 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
 endif()
 
 configure_file(
-  ../include/unifex/config.hpp.in
-  "${PROJECT_BINARY_DIR}/include/unifex/config.hpp")
+  ${PROJECT_SOURCE_DIR}/include/unifex/config.hpp.in
+  ${PROJECT_BINARY_DIR}/include/unifex/config.hpp)
 
+include(GNUInstallDirs)
 target_include_directories(unifex
   PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include/>
-    "${PROJECT_BINARY_DIR}/include")
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 target_compile_features(unifex PUBLIC cxx_std_17)
 
 if(CXX_COROUTINES_HAVE_COROUTINES)
   target_link_libraries(unifex PUBLIC std::coroutines)
 endif()
+
+# Install targets
+
+install(TARGETS unifex
+  EXPORT unifexTargets
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(
+  DIRECTORY ${PROJECT_SOURCE_DIR}/include
+  TYPE INCLUDE
+  PATTERN "*.in" EXCLUDE)
+install(
+  FILES ${PROJECT_BINARY_DIR}/include/unifex/config.hpp 
+  DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR}/unifex)
+export(TARGETS unifex
+  NAMESPACE unifex::
+  FILE unifexConfig.cmake)
+install(
+  EXPORT unifexTargets
+  NAMESPACE unifex::
+  FILE unifexConfig.cmake
+  DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/unifex)
